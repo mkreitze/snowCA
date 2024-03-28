@@ -59,6 +59,6 @@ def runCA():
 runCA()
 
 my_anim = animation.ArtistAnimation(fig, CAFrames, interval=10, blit=True, repeat_delay=1000) # makes the animation using matplotlib
-# my_anim.save("animation.gif") #doesnt want to use ffmpeg for some reason, hence the gif extension
+my_anim.save("animation.gif") #doesnt want to use ffmpeg for some reason, hence the gif extension
 
 plt.show()
