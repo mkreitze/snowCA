@@ -8,11 +8,11 @@ from scipy.ndimage import convolve
 CAFrames = []
 CASize = 100
 updates = 100
-snowFallChance = 0.1 # occurs as normal varb < threshold
-snowFallFequency = 2
+snowFallChance = 0.2 # occurs as normal varb < threshold
+snowFallFequency = 10
 speed = 1
-temp = 0.5 # represents melting chance
-meltFreq = 10
+temp = 0.2 # represents melting chance
+meltFreq = 1
 CLUMPRANGE = np.array([[0, 1, 0],
                        [1, 1, 1],
                        [0, 1, 0]])
@@ -25,7 +25,6 @@ fig = plt.figure()
 # Makes 'new snowfall' 
 def makeSnowFall():
     rands = np.random.rand(CASize,CASize)
-    rands[rands < snowFallChance/2] = 2 # "big snow" at half snow chance
     rands[rands < snowFallChance] = 1 # snow falls if lower than chance
     return(rands)
 
@@ -34,7 +33,9 @@ def clump(snowCA,clumpRange = CLUMPRANGE):
 
 def melt(snowCA):
     rands = np.random.rand(CASize,CASize)
-    snowCA[(snowCA*rands)<temp] = 0 # 'melts' if randoms are lower than expected value
+    meltChance = np.arange(1/CASize,1+1/CASize,1/CASize)
+    rands[rands < snowFallChance/2] = 2 # "big snow" at half snow chance
+    snowCA[(snowCA*rands)>temp] = 0 # 'melts' if randoms are lower than expected value
     return(snowCA)
 
 #loops through available png:s
