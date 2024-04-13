@@ -4,57 +4,60 @@ from matplotlib import animation
 import numpy as np
 from scipy.ndimage import convolve
 
-# 
+# TO DO:
+# ADD SLIDERS AND ALLOW THE SIMULATION TO JUST RUN ALWAYS
+# ADD EVOLUTION TO EVOLVE TO BEST "DESIRED CONVOLUTION"
+
 CAFrames = []
 CASize = 100
-updates = 100
-snowFallChance = 0.2 # occurs as normal varb < threshold
-snowFallFequency = 10
-speed = 1
-temp = 0.2 # represents melting chance
-meltFreq = 1
-CLUMPRANGE = np.array([[0, 1, 0],
-                       [1, 1, 1],
-                       [0, 1, 0]])
+UPDATES = 1000
+SNOWFALLCHANCE = 1 # occurs as normal varb < threshold
+SNOWFALLSPACE = [3,CASize]
+MELTCHANCE = 0.1 # turn this into a real function one day
+SPEED = 1 
+DIR = 0 # 0 is horz
 
+# # Turn this on to turn it into a sideways flame!
+# CLUMPRANGE = np.array([[0.1, 0.2, 0.1],
+#                        [0.2, 0.3, 0.2],
+#                        [0.1, 0.2, 0.1]])
+# SNOWFALLSPACE = [CASize,3] 
+# DIR = 1
 
+CLUMPRANGE = np.array([[0.1, 0.1, 0.1],
+                       [0.1, 1, 0.1],
+                       [0.1, 0.1, 0.1]])
 
 fig = plt.figure()
 
 
-# Makes 'new snowfall' 
-def makeSnowFall():
-    rands = np.random.rand(CASize,CASize)
-    rands[rands < snowFallChance] = 1 # snow falls if lower than chance
-    return(rands)
 
 def clump(snowCA,clumpRange = CLUMPRANGE):
     return(convolve(snowCA,clumpRange, mode = 'constant'))
 
 def melt(snowCA):
-    rands = np.random.rand(CASize,CASize)
-    meltChance = np.arange(1/CASize,1+1/CASize,1/CASize)
-    rands[rands < snowFallChance/2] = 2 # "big snow" at half snow chance
-    snowCA[(snowCA*rands)>temp] = 0 # 'melts' if randoms are lower than expected value
+    meltAtElevation = np.arange(0,CASize)/CASize*MELTCHANCE # Given by a linear change from 0 to melt chance
+    meltAtElevation = meltAtElevation.reshape((CASize,1)) # This and above line could be precomped
+    randomChances = np.random.rand(CASize,CASize)
+    snowCA = np.greater(randomChances*snowCA,meltAtElevation).astype(int)
     return(snowCA)
 
 #loops through available png:s
-def runCA():
+def runCA(info = 0):
+    score = 0
     pastFrame = np.zeros((CASize,CASize))
-    for i in range(updates):
+    for i in range(UPDATES):
+        # CLUMPRANGE = np.random.uniform(0,0.5,(3,3))*2 #This is a fun idea, but it just makes little spheres
         curFrame = pastFrame
-        if i%snowFallFequency == 0: 
-            randSnowFall = makeSnowFall()
-            curFrame = pastFrame + randSnowFall
-        if i%meltFreq == 0:
-            curFrame = melt(curFrame)
-        nextFrame = np.roll(melt(curFrame),1, axis = 0) # applies flow, and also melts
-        nextFrame[nextFrame >= 1] = 1
-        imgplot = plt.imshow(nextFrame, cmap="binary_r") # makes image simply
+        curFrame[0:SNOWFALLSPACE[0],0:SNOWFALLSPACE[1]] = np.random.rand(SNOWFALLSPACE[0],SNOWFALLSPACE[1]) < SNOWFALLCHANCE # makes snow fall in region at chance LOWER than given
+        curFrame = convolve(curFrame,CLUMPRANGE) # clumps up the snow in the CLUMPRANGE neighbourhood as perscribed
+        imgplot = plt.imshow(curFrame, cmap="binary_r") # makes image simply
+        nextFrame = np.roll(melt(curFrame),SPEED, axis = DIR) # applies flow, and also melts
         pastFrame = nextFrame # advances time
-
+        score += np.cumsum(curFrame)
         # I hate that I need a global variable, but okay
         CAFrames.append([imgplot])
+    return(score)
 
 
 runCA()
